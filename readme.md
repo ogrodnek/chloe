@@ -1,0 +1,1 @@
+Amazon SNS -> Jabber bridge
