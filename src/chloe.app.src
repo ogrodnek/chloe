@@ -1,0 +1,14 @@
+{application, chloe,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {modules, [chloe_sup, message_router, sns_jabber, sns_message, sns_web, struct, user_prefs]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+		  mnesia
+                 ]},
+  {mod, { chloe, []}},
+  {env, []}
+ ]}.
