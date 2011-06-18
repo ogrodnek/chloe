@@ -10,8 +10,7 @@
 -export([init/1]).
 
 %% Helper macro for declaring children of supervisor
--define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
--define(CHILD(I, Type), {?CHILD(I, Type, [])}).
+-define(WORKER(I, Args), {I, {I, start_link, Args}, permanent, 5000, worker, [I]}).
 
 %% ===================================================================
 %% API functions
@@ -27,13 +26,9 @@ start_link(Port, JID, Password) ->
 init([Port, JID, Password]) ->
     io:format("~p (~p) starting...~n", [?MODULE, self()]),
     
-    UserPrefs = {user_prefs, {user_prefs, start_link, []},
-                 permanent, 5000, worker, [user_prefs]},
-    MessageRouter = {message_router, {message_router, start_link, []},
-                     permanent, 5000, worker, [message_router]},
-    Jabber = {sns_jabber, {sns_jabber, start_link, [JID, Password]},
-              permanent, 5000, worker, [sns_jabber]},
-    WebServer = {sns_web, {sns_web, start_link, [Port]},
-                 permanent, 5000, worker, [sns_web]},
+    UserPrefs = ?WORKER(user_prefs, []),
+    MessageRouter = ?WORKER(message_router, []),
+    Jabber = ?WORKER(sns_jabber, [JID, Password]),
+    WebServer = ?WORKER(sns_web, [Port]),
     {ok, {{one_for_all, 10, 30}, [UserPrefs, MessageRouter, Jabber, WebServer]}}.
     
