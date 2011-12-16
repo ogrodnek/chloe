@@ -92,6 +92,7 @@ process_prescense(_Session, "unavailable", Message) ->
     message_router:unregister_nick(binary_to_list(Name)),
     ok.
 
+
 process_message(Session, Message) ->
     {jid, _, From, _, _} = exmpp_jid:parse(exmpp_stanza:get_sender(Message)),
     X = exmpp_xml:get_attribute(Message, <<"from">>, <<"unknown">>),
@@ -101,6 +102,7 @@ process_message(Session, Message) ->
         undefined -> ok;
         Body -> io:format("Got message from ~p, ~p~n", [From, Body]),
                 Cmd = string:tokens(binary_to_list(Body), " "),
+                io:format("Command is ~p~n", [Cmd]),
                 Res = process_cmd(From, Cmd),
                 Reply = exmpp_message:set_body(exmpp_stanza:reply_without_content(Message), Res),
                 exmpp_session:send_packet(Session, Reply)
@@ -114,12 +116,11 @@ process_cmd(User, ["list"]) ->
         Prefs -> subst("~p", Prefs)
     end;
 
-process_cmd(User1, ["add" | [Arg]]) ->
+process_cmd(User1, ["add" | [Topic]]) ->
     User = binary_to_list(User1),
-    [Topic, Type, App | [] ] = string:tokens(Arg, "/"),
-    user_prefs:save_pref(User, Topic, Type, App),
-    io:format("Saving ~p ~p ~p ~p~n", [User, Topic, Type, App]),
-    subst("Okay, adding ~p....~n", [Arg]);
+    user_prefs:save_pref(User, Topic),
+    io:format("Saving ~p ~p~n", [User, Topic]),
+    subst("Okay, adding ~p....~n", [Topic]);
 
 process_cmd(User, ["hi"]) ->
     subst("Hello, ~p", [binary_to_list(User)]);

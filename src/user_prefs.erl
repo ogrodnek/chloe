@@ -11,26 +11,24 @@
 
 -record(user_pref,
         {user,
-         topic,
-         type,
-         app}).
+         topic}).
 
 %%% API
--export([start_link/0, save_pref/4, find_prefs/1, find_users/3, shutdown/0]).
+-export([start_link/0, save_pref/2, find_prefs/1, find_users/1, shutdown/0]).
 
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-save_pref(User, Topic, Type, App) ->
-    gen_server:call(?SERVER, {save_pref, User, Topic, Type, App}).
+save_pref(User, Topic) ->
+    gen_server:call(?SERVER, {save_pref, User, Topic}).
 
 find_prefs(User) ->
     {ok, Prefs} = gen_server:call(?SERVER, {find_prefs, User}),
     Prefs.
 
-find_users(Topic, Type, App) ->
-    io:format("find_users: ~p ~p ~p~n", [Topic, Type, App]),
-    {ok, Users} = gen_server:call(?SERVER, {find_users, Topic, Type, App}),
+find_users(Topic) ->
+    io:format("find_users: ~p~n", [Topic]),
+    {ok, Users} = gen_server:call(?SERVER, {find_users, Topic}),
     Users.
 
 shutdown() ->
@@ -43,16 +41,16 @@ init([]) ->
     init_store(),
     {ok, []}.
 
-handle_call({save_pref, User, Topic, Type, App}, _From, State) ->
-    store_pref(User, Topic, Type, App),
+handle_call({save_pref, User, Topic}, _From, State) ->
+    store_pref(User, Topic),
     {reply, ok, State};
 
 handle_call({find_prefs, User}, _From, State) ->
     Prefs = get_prefs(User),
     {reply, {ok, Prefs}, State};
 
-handle_call({find_users, Topic, Type, App}, _From, State) ->
-    Users = get_users(Topic, Type, App),
+handle_call({find_users, Topic}, _From, State) ->
+    Users = get_users(Topic),
     {reply, {ok, Users}, State};
 
 handle_call(_Request, _From, State) ->
@@ -67,7 +65,6 @@ handle_cast(_Msg, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-
 terminate(_Reason, _State) ->
     io:format("Terminating..."),
     ok.
@@ -77,13 +74,15 @@ code_change(_OldVsn, State, _Extra) ->
 
 %% Internal 
 
-store_pref(User, Topic, Type, App) ->
+store_pref(User, Topic) ->
     F = fun() ->
-                mnesia:write(#user_pref{user=User, topic=Topic, type=Type, app=App})
+                mnesia:write(#user_pref{user=User, topic=Topic})
         end,
     mnesia:transaction(F).
 
 get_prefs(User) ->
+    io:format("get_prefs ~p", [User]),
+
     F = fun() ->
                 Query = qlc:q([P || P <- mnesia:table(user_pref),
                                     P#user_pref.user =:= User]),
@@ -92,12 +91,10 @@ get_prefs(User) ->
     {atomic, Prefs} = mnesia:transaction(F),
     Prefs.
 
-get_users(Topic, Type, App) ->
+get_users(Topic) ->
     F = fun() ->
                 Query = qlc:q([P#user_pref.user || P <- mnesia:table(user_pref),
-                                                   ((P#user_pref.topic =:= Topic) or (P#user_pref.topic =:= "*"))
-                                                       and ((P#user_pref.type =:= Type) or (P#user_pref.type =:= "*"))
-                                                       and ((P#user_pref.app =:= App) or (P#user_pref.app =:= "*"))]),
+                                                   ((P#user_pref.topic =:= Topic) or (P#user_pref.topic =:= "*"))]),
                 qlc:e(Query)
         end,
     {atomic, Users} = mnesia:transaction(F),
