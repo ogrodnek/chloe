@@ -81,8 +81,6 @@ store_pref(User, Topic) ->
     mnesia:transaction(F).
 
 get_prefs(User) ->
-    io:format("get_prefs ~p", [User]),
-
     F = fun() ->
                 Query = qlc:q([P || P <- mnesia:table(user_pref),
                                     P#user_pref.user =:= User]),

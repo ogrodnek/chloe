@@ -112,8 +112,8 @@ process_message(Session, Message) ->
 
 process_cmd(User, ["list"]) ->
     case user_prefs:find_prefs(binary_to_list(User)) of
-        [] -> "No subscriptions listed.  Use add endpoint/type/app to register.";
-        Prefs -> subst("~p", Prefs)
+        [] -> "No subscriptions listed.  Use add <topic> to register one.";
+        Prefs -> io_lib:fwrite("~p", [Prefs])
     end;
 
 process_cmd(User1, ["add" | [Topic]]) ->
